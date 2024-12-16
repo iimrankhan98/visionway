@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-course-finder
+  labels:
+    app: ai-course-finder
+spec:
+  selector:
+    env: prod
+  type: ClusterIP  # Change from NodePort to ClusterIP
+  ports:  # Corrected the typo here
+    - port: 8200  # Service port
+      targetPort: 8200  # Target port on the backend pods
