@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+apiVersion: apps/v1 
 kind: Deployment
 metadata:
   name: ai-course-finder-app
@@ -20,20 +20,4 @@ spec:
     spec:
       containers:
       - name: ai-course
-        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:5875
-        livenessProbe:
-          httpGet:
-            path: /docs
-            port: 8200
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /docs
-            port: 8200
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 2
+        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:6122
