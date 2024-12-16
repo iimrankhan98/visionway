@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: ai-course
-        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:6197
+        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:5875
         livenessProbe:
           httpGet:
             path: /docs
