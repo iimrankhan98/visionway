@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: visionapply-frontend-ingress
+  annotations:
+    alb.ingress.kubernetes.io/group.name: "alb-visionway-eks"
+    alb.ingress.kubernetes.io/load-balancer-name: "alb-visionway-eks"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '15'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/success-codes: '200'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-south-1:650378210006:certificate/4a5b64b0-d632-4eff-8b57-a98584a94510"
+
+spec:
+  tls:
+  - hosts:
+      - "*.visionapply.com"
+      - visionapply.com
+  ingressClassName: alb-ingress
+  rules:
+    - host: "*.visionapply.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: visionapply-frontend
+                port:
+                  number: 80
