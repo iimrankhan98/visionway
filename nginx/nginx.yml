@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: simple-app-container
-        image: docker pull vimal13/apache-webserver-php
+        image: vimal13/apache-webserver-php
         ports:
         - containerPort: 80
