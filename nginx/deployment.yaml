@@ -16,4 +16,4 @@ spec:
     spec:
       containers:
       - name: simple-app-container
-        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:6855
+        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:6859
