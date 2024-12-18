@@ -20,4 +20,4 @@ spec:
     spec:
       containers:
       - name: ai-course
-        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:6122
+        image: 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:6873
