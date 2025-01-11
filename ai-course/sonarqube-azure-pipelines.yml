@@ -1,0 +1,121 @@
+trigger:
+  branches:
+    include:
+      - master
+
+resources:
+  repositories:
+    - repository: azureRepo
+      type: git
+      name: VisionWayB2BAndB2C/ai-course-finder
+    - repository: githubRepo
+      type: github
+      name: centocode/visionway
+      endpoint: my-github
+
+pool:
+  name: jobs-build-server
+
+stages:
+  # Stage 1: Build Docker Image
+  - stage: BuildDockerImage
+    displayName: 'Stage 1: Build Docker Image'
+    jobs:
+      - job: BuildDocker
+        displayName: 'Build Docker Image'
+        pool:
+          name: jobs-build-server
+        steps:
+          - script: |
+              pwd
+              echo "Cleaning workspace"
+              rm -rf $(Agent.BuildDirectory)/*
+            displayName: 'Clean Workspace'
+
+          - checkout: azureRepo
+
+          - script: |
+              echo "Building Docker Image"
+              docker build -t 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:$(Build.BuildId) .
+            displayName: 'Build Docker Image'
+
+  # Stage 2: SonarQube Analysis
+  - stage: SonarQubeAnalysis
+    displayName: 'Stage 2: SonarQube Analysis'
+    dependsOn: BuildDockerImage
+    jobs:
+      - job: SonarQubeScan
+        displayName: 'SonarQube Scan'
+        pool:
+          name: jobs-build-server
+        steps:
+          - task: SonarQubePrepare@5
+            inputs:
+              SonarQube: 'sonarqube-ssh-cred'
+              scannerMode: 'CLI'
+              configMode: 'manual'
+              cliProjectKey: 'ai-course-finder'
+              cliProjectName: 'ai-course-finder'
+              cliProjectVersion: '1.0'
+              cliSources: '.'
+
+          - script: |
+              sonar-scanner \
+                -Dsonar.projectKey=ai-course-finder \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=http://15.206.14.189:9000 \
+                -Dsonar.login=sqa_2ec053b55de58232347627af7a3f5d253fd0ef4d \
+                -Dsonar.qualitygate.wait=true
+            displayName: 'Run SonarQube Scanner'
+
+          - task: SonarQubePublish@5
+            inputs:
+              pollingTimeoutSec: '300'
+
+  # Stage 3: Push Docker Image to AWS ECR
+  - stage: PushDockerImage
+    displayName: 'Stage 3: Push Docker Image to AWS ECR'
+    dependsOn: SonarQubeAnalysis
+    jobs:
+      - job: PushDocker
+        displayName: 'Push Docker Image to AWS ECR'
+        pool:
+          name: jobs-build-server
+        steps:
+          - script: |
+              aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 650378210006.dkr.ecr.ap-south-1.amazonaws.com
+              docker push 650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:$(Build.BuildId)
+            displayName: 'Push Docker Image to AWS ECR'
+
+  # Stage 4: Update Deployment YAML
+  - stage: UpdateDeployment
+    displayName: 'Stage 4: Update Deployment YAML'
+    dependsOn: PushDockerImage
+    jobs:
+      - job: UpdateYAML
+        displayName: 'Update GitHub Deployment YAML with New Image'
+        pool:
+          name: jobs-build-server
+        steps:
+          - script: |
+              pwd
+              echo "Cleaning workspace"
+              rm -rf $(Agent.BuildDirectory)/*
+            displayName: 'Clean Workspace'
+
+          - checkout: githubRepo
+            persistCredentials: true
+
+          - script: |
+              echo "Updating Deployment YAML with new Docker Image Tag"
+              IMAGE_TAG=650378210006.dkr.ecr.ap-south-1.amazonaws.com/ai-course-finder-prod:$(Build.BuildId)
+              cd ai-course
+              sed -i "s|image: .*|image: ${IMAGE_TAG}|g" deployment.yaml
+              git config user.email "imran@centocode.com"
+              git config user.name "centocode"
+              git fetch origin
+              git checkout main
+              git add deployment.yaml
+              git commit -m "Update deployment images to ${IMAGE_TAG}"
+              git push origin main
+            displayName: 'Update Deployment YAML in GitHub'
